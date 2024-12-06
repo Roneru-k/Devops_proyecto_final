@@ -1,0 +1,87 @@
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using AventStack.ExtentReports;
+using AventStack.ExtentReports.Reporter;
+using System;
+using System.IO;
+
+//Ronell Medina 20231035
+
+class PruebasLibreriaElSaber
+{
+    static void Main(string[] args)
+    {
+        
+        string rutaEscritorio = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        string archivoReporte = Path.Combine(rutaEscritorio, "ReporteLibreria.html");
+        string archivoCaptura = Path.Combine(rutaEscritorio, "CapturaLibreria.png");
+
+        
+        var reporteroHTML = new ExtentSparkReporter(archivoReporte);
+        var reporte = new ExtentReports();
+        reporte.AttachReporter(reporteroHTML);
+
+        
+        var pruebaAutomatizada = reporte.CreateTest("Prueba Automatizada - Libreria El Saber");
+
+        
+        IWebDriver navegador = new ChromeDriver();
+
+        try
+        {
+            
+            navegador.Navigate().GoToUrl("https://libreriaelsaber.infinityfreeapp.com/?i=2");
+            pruebaAutomatizada.Info("La pagina se cargo correctamente.");
+
+            
+            try
+            {
+                var enlaceInicio = navegador.FindElement(By.LinkText("Inicio"));
+                if (enlaceInicio.Displayed)
+                {
+                    pruebaAutomatizada.Pass("El enlace 'Inicio' esta visible.");
+                    enlaceInicio.Click();
+                    pruebaAutomatizada.Pass("El enlace 'Inicio' redirige correctamente a la pagina principal.");
+                }
+            }
+            catch (NoSuchElementException)
+            {
+                pruebaAutomatizada.Fail("El enlace 'Inicio' no esta visible o no existe.");
+            }
+
+            
+            try
+            {
+                var enlaceContacto = navegador.FindElement(By.LinkText("Contacto"));
+                if (enlaceContacto.Displayed)
+                {
+                    enlaceContacto.Click();
+                    pruebaAutomatizada.Pass("El enlace 'Contacto' redirige correctamente a la página de contacto.");
+                }
+                else
+                {
+                    pruebaAutomatizada.Fail("El enlace 'Contacto' no esta visible.");
+                }
+            }
+            catch (NoSuchElementException)
+            {
+                pruebaAutomatizada.Fail("El enlace 'Contacto' no esta visible o no es funcional.");
+            }
+
+            
+            Screenshot capturaPantalla = ((ITakesScreenshot)navegador).GetScreenshot();
+            capturaPantalla.SaveAsFile(archivoCaptura);
+            pruebaAutomatizada.AddScreenCaptureFromPath(archivoCaptura);
+        }
+        catch (Exception ex)
+        {
+            pruebaAutomatizada.Fail($"Ocurrio un error durante la prueba: {ex.Message}");
+        }
+        finally
+        {
+            
+            navegador.Quit();
+            reporte.Flush();
+        }
+    }
+}
